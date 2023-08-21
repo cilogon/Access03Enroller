@@ -42,7 +42,7 @@ class Access03EnrollerCoPetitionsController extends CoPetitionsController {
     $coPersonId = $petition['CoPetition']['enrollee_co_person_id'];
 
     // Find the OIDC sub from the environment.
-    $oidcSub = env("OIDC_CLAIM_sub");
+    $oidcSub = env("REDIRECT_OIDC_CLAIM_sub");
 
     if(empty($oidcSub)) {
       $this->redirect($onFinish);
@@ -107,7 +107,7 @@ class Access03EnrollerCoPetitionsController extends CoPetitionsController {
 
     // If the user just came back from authenticating using the ACCESS
     // IdP then stop this flow.
-    $loginServerName = env("OIDC_CLAIM_idp_name");
+    $loginServerName = env("REDIRECT_OIDC_CLAIM_idp_name");
 
     if($loginServerName == "ACCESS") {
       $this->redirect("https://identity.access-ci.org/duplicate-enrollment");
