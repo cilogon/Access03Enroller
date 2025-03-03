@@ -6,7 +6,7 @@
 // The following enrollment steps are implemented:
 //
 // checkEligibility:
-//   - Used to prevent linking using the ACCESS CI 
+//   - Used to prevent linking using the ACCESS CI
 //     IdP since an Organizational Identity with the
 //     ACCESS CI ePPN marked as a login identifier is
 //     already set up for each CO Person.
@@ -18,11 +18,14 @@
 // TODO Add other email addresses?
 
 App::uses('CoPetitionsController', 'Controller');
- 
+
 class Access03EnrollerCoPetitionsController extends CoPetitionsController {
   // Class name, used by Cake
   public $name = "Access03EnrollerCoPetitions";
-  public $uses = array("CoPetition");
+  public $uses = array(
+    "CoPetition",
+    "AttributeEnumeration"
+  );
 
   /**
    * Plugin functionality following finalize step:
@@ -93,7 +96,7 @@ class Access03EnrollerCoPetitionsController extends CoPetitionsController {
    * @param Integer $id CO Petition ID
    * @param Array $onFinish URL, in Cake format
    */
-   
+
   protected function execute_plugin_checkEligibility($id, $onFinish) {
     $args = array();
     $args['conditions']['CoPetition.id'] = $id;
