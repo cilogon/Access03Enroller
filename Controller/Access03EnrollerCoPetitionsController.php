@@ -46,27 +46,23 @@ class Access03EnrollerCoPetitionsController extends CoPetitionsController {
 
     // Find the OIDC sub from the environment.
     $oidcSub = env("REDIRECT_OIDC_CLAIM_sub");
-
-    if(empty($oidcSub)) {
-      $this->redirect($onFinish);
-    }
-
-    // See if the OIDC sub is already set as an Identifier on the
-    // CO Person record.
-    $subExists = false;
-    foreach($petition['EnrolleeCoPerson']['Identifier'] as $i) {
-      if($i['type'] == IdentifierEnum::OIDCsub) {
-        $existingOidcSub = $i['identifier'];
-        if($existingOidcSub == $oidcSub) {
-          $subExists = true;
-          break;
+    if(!empty($oidcSub)) {
+      // See if the OIDC sub is already set as an Identifier on the
+      // CO Person record.
+      $exists = false;
+      foreach($petition['EnrolleeCoPerson']['Identifier'] as $i) {
+        if($i['type'] == IdentifierEnum::OIDCsub) {
+          $existingOidcSub = $i['identifier'];
+          if($existingOidcSub == $oidcSub) {
+            $exists = true;
+            break;
+          }
         }
       }
-    }
 
-    // If the sub does not exist add it as an Identifier for
-    // the CO Person record.
-    if(!$subExists) {
+      // If the sub does not exist add it as an Identifier for
+      // the CO Person record.
+      if(!$exists) {
         $this->CoPetition->EnrolleeCoPerson->Identifier->clear();
 
         $data = array();
@@ -84,6 +80,47 @@ class Access03EnrollerCoPetitionsController extends CoPetitionsController {
           $this->log($msg);
           throw new RuntimeException($msg);
         }
+      }
+    }
+
+    // CIL-2297 Add linked identity's ePPN as an Identifier
+    // Find the OIDC ePPN from the environment
+    $eppn = env("REDIRECT_OIDC_CLAIM_eppn");
+    if(!empty($eppn)) {
+      // See if the linked ePPN is already set as an Identifier on the
+      // CO Person record.
+      $exists = false;
+      foreach($petition['EnrolleeCoPerson']['Identifier'] as $i) {
+        if($i['type'] == IdentifierEnum::ePPN) {
+          $existingeppn = $i['identifier'];
+          if($existingeppn == $eppn) {
+            $exists = true;
+            break;
+          }
+        }
+      }
+
+      // If the ePPN does not exist add it as an Identifier for
+      // the CO Person record.
+      if(!$exists) {
+        $this->CoPetition->EnrolleeCoPerson->Identifier->clear();
+
+        $data = array();
+        $data['Identifier']['identifier'] = $eppn;
+        $data['Identifier']['type'] = IdentifierEnum::ePPN;
+        $data['Identifier']['status'] = SuspendableStatusEnum::Active;
+        $data['Identifier']['login'] = false;
+        $data['Identifier']['co_person_id'] = $coPersonId;
+
+        if(!$this->CoPetition->EnrolleeCoPerson->Identifier->save($data)) {
+          $msg = "ERROR could not create Identifier: ";
+          $msg = $msg . "ACCESS ID $accessId and CoPerson ID $coPersonId: ";
+          $msg = $msg . "Validation errors: ";
+          $msg = $msg . print_r($this->CoPetition->EnrolleeCoPerson->Identifier->validationErrors, true);
+          $this->log($msg);
+          throw new RuntimeException($msg);
+        }
+      }
     }
 
     // This step is completed so redirect to continue the flow.
@@ -112,7 +149,7 @@ class Access03EnrollerCoPetitionsController extends CoPetitionsController {
     // IdP then stop this flow.
     $loginServerName = env("REDIRECT_OIDC_CLAIM_idp_name");
 
-    if($loginServerName == "ACCESS") {
+    if(preg_match('/^ACCESS/', $loginServerName)) {
       $this->redirect("https://identity.access-ci.org/duplicate-enrollment");
     }
 
