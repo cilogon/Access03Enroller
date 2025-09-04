@@ -189,7 +189,7 @@ class Access03EnrollerCoPetitionsController extends CoPetitionsController {
       ));
 
       // Then, redirect to a page explaining that they already linked that IdP
-      $this->redirect("https://identity.access-ci.org/linked-identity-exists");
+      $this->redirect(_txt('pl.access03_enroller.redirect.linked_identity_exists'));
     }
 
     $this->redirect($onFinish);
